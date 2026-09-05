@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="50%" stop-color="#0066FF" />
+      <stop offset="100%" stop-color="#002A80" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background Disc -->
+  <rect width="64" height="64" rx="14" fill="#02050A" />
+  <rect width="62" height="62" x="1" y="1" rx="13" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+  
+  <!-- Outer Geometric Shield / Hexagon -->
+  <path d="M32 8L52 18V36L32 54L12 36V18L32 8Z" stroke="url(#cyberGrad)" stroke-width="2" stroke-linejoin="round" fill="rgba(0,102,255,0.06)" />
+  
+  <!-- Inner Autonomous Core Geometry -->
+  <path d="M32 16L44 23.5V38.5L32 46L20 38.5V23.5L32 16Z" stroke="#00F0FF" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.8" />
+  
+  <!-- Central Pulse Nexus -->
+  <circle cx="32" cy="31" r="5" fill="#0066FF" filter="url(#glow)" />
+  <circle cx="32" cy="31" r="2.5" fill="#FFFFFF" />
+
+  <!-- Alignment Guides -->
+  <line x1="32" y1="8" x2="32" y2="16" stroke="#00F0FF" stroke-width="1.5" opacity="0.6" />
+  <line x1="32" y1="46" x2="32" y2="54" stroke="#0066FF" stroke-width="1.5" opacity="0.6" />
+</svg>
