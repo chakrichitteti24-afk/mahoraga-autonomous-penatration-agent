@@ -71,7 +71,7 @@ export const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose })
             </div>
 
             <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-              Mahoraga AI is currently under active construction by CipherFlux Labs. Enter your corporate email to receive verified engineering milestones and early alpha invitations.
+              Mahoraga AI delivers automated vulnerability auditing and security assessment. Enter your corporate email to receive security intelligence updates and enterprise releases.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

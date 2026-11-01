@@ -74,8 +74,8 @@ export const ProductStatusRoadmap: React.FC = () => {
             <h2 className="font-display font-black tracking-[0.18em] sm:tracking-[0.22em] text-3xl sm:text-5xl md:text-6xl text-white drop-shadow-[0_0_30px_rgba(0,102,255,0.3)]">
               MAHORAGA AI
             </h2>
-            <div className="font-display font-extrabold tracking-wider text-xl sm:text-3xl text-electric-blue-light uppercase">
-              UNDER CONSTRUCTION
+            <div className="font-display font-extrabold tracking-wider text-xl sm:text-2xl text-subtle-cyan uppercase">
+              SECURITY ARCHITECTURE MATRIX
             </div>
           </div>
 

@@ -19,7 +19,7 @@ export const InitializationScreen: React.FC<InitializationScreenProps> = ({ onCo
     // Sequence timeline:
     // 0 - 300ms: Dark screen
     // 300ms: MAHORAGA AI wordmark smoothly appears
-    // 950ms: UNDER CONSTRUCTION status fades in
+    // 950ms: INITIALIZING SECURITY ENGINE status fades in
     // 1650ms: Fadeout begins
     // 2000ms: Complete and unmount
 
@@ -80,8 +80,8 @@ export const InitializationScreen: React.FC<InitializationScreenProps> = ({ onCo
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-subtle-cyan opacity-40"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-subtle-cyan"></span>
             </span>
-            <span className="font-mono text-[10px] sm:text-xs font-semibold tracking-[0.25em] text-text-secondary uppercase">
-              UNDER CONSTRUCTION
+            <span className="font-mono text-[10px] sm:text-xs font-semibold tracking-[0.25em] text-emerald-400 uppercase">
+              INITIALIZING SECURITY ENGINE...
             </span>
           </div>
         </div>

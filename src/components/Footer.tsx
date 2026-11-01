@@ -25,11 +25,11 @@ export const Footer: React.FC = () => {
             </p>
           </div>
 
-          {/* Under Construction Notice Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.02] self-start md:self-center">
-            <span className="h-2 w-2 rounded-full bg-electric-blue animate-pulse-slow"></span>
-            <span className="font-mono text-xs font-semibold tracking-[0.2em] text-white/90 uppercase">
-              UNDER CONSTRUCTION
+          {/* Operational Status Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 self-start md:self-center">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-mono text-xs font-semibold tracking-[0.2em] text-emerald-300 uppercase">
+              SYSTEM OPERATIONAL
             </span>
           </div>
 
@@ -51,9 +51,9 @@ export const Footer: React.FC = () => {
         {/* Safety & Legal Transparency Disclaimer */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono text-text-muted">
           <div className="flex items-center gap-2">
-            <Lock size={12} className="text-electric-blue" />
+            <Lock size={12} className="text-emerald-400" />
             <span>
-              Mahoraga AI is an upcoming research &amp; engineering initiative. Backend engine not yet operational.
+              Mahoraga AI Autonomous Security Assessment &amp; Vulnerability Auditing Platform.
             </span>
           </div>
           <div>

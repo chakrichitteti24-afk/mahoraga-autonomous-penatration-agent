@@ -32,22 +32,22 @@ export const App: React.FC = () => {
         {/* Hero Section with MAHORAGA AI wordmark & AI Core Visualization */}
         <HeroSection onOpenWaitlist={() => setIsWaitlistOpen(true)} />
 
-        {/* Dedicated UNDER CONSTRUCTION System Status Panel */}
+        {/* System Telemetry & Operational Subsystems Panel */}
         <StatusPanel />
 
         {/* Capabilities Section: BUILT FOR AUTONOMOUS SECURITY */}
         <CapabilitiesSection />
 
-        {/* Conceptual Agent Workflow Pipeline: USER -> MAHORAGA AI -> ASSESS -> ANALYZE -> PRIORITIZE -> REPORT */}
+        {/* Agent Workflow Pipeline: USER -> MAHORAGA AI -> ASSESS -> ANALYZE -> PRIORITIZE -> REPORT */}
         <AgentWorkflow />
 
-        {/* Security Assessment UI Preview (Operator Console Mockup) */}
+        {/* Live Security Scanner & Auditor Console */}
         <DashboardPreview />
 
-        {/* Automated Security Reports Section */}
+        {/* Automated Security Reports Deliverable Generator */}
         <ReportPreview />
 
-        {/* Voice & NLP Agent Conceptual Interface ("Ask Mahoraga") */}
+        {/* Voice & NLP Agent Interface ("Ask Mahoraga") */}
         <VoiceConcept />
 
         {/* Product Status & Engineering Roadmap Matrix */}

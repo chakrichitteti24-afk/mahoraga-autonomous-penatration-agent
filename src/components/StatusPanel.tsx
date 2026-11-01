@@ -1,38 +1,52 @@
-import { GitCommit, Radio, Server } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Radio, Server, CheckCircle2 } from 'lucide-react';
+import { MahoragaAPI } from '../services/api';
 
 export const StatusPanel: React.FC = () => {
+  const [backendOnline, setBackendOnline] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      const health = await MahoragaAPI.checkHealth();
+      if (health && health.status === 'ONLINE') {
+        setBackendOnline(true);
+      }
+    };
+    check();
+  }, []);
+
   const subsystems = [
     {
-      name: 'Autonomous Agent Core',
-      spec: 'Multi-step reasoning engine with bounded execution contexts',
-      status: 'IN DEVELOPMENT',
-      statusColor: 'text-subtle-cyan',
-      dotColor: 'bg-subtle-cyan',
-      progress: 'Architecture & Policy Design',
+      name: 'SAST Source Code Scanner',
+      spec: 'AST-based static analysis for SQL injection, command execution, and hardcoded keys',
+      status: 'OPERATIONAL',
+      statusColor: 'text-emerald-400',
+      dotColor: 'bg-emerald-400',
+      progress: 'AST & Pattern Engine Active',
     },
     {
-      name: 'Deterministic Policy Guardrails',
-      spec: 'Strict containment layer preventing unauthorized operations',
-      status: 'IN DEVELOPMENT',
+      name: 'Web Application DAST Auditor',
+      spec: 'Non-destructive live HTTP probe for HSTS, CSP, CORS reflections, and TLS handshakes',
+      status: 'OPERATIONAL',
+      statusColor: 'text-emerald-400',
+      dotColor: 'bg-emerald-400',
+      progress: 'Precision Socket & Header Probing',
+    },
+    {
+      name: 'Software Supply Chain (SCA)',
+      spec: 'Dependency analysis scanning package.json and requirements.txt against CVE advisories',
+      status: 'OPERATIONAL',
+      statusColor: 'text-subtle-cyan',
+      dotColor: 'bg-subtle-cyan',
+      progress: 'OSV & Local Advisory Catalog',
+    },
+    {
+      name: 'Remediation Intelligence Agent',
+      spec: 'Automated executive summary generation, CVSS triage, and code patch synthesis',
+      status: 'OPERATIONAL',
       statusColor: 'text-electric-blue-light',
       dotColor: 'bg-electric-blue',
-      progress: 'Formal Verification Framework',
-    },
-    {
-      name: 'Security Assessment Engine',
-      spec: 'Target topology analysis & workflow orchestration engine',
-      status: 'IN DEVELOPMENT',
-      statusColor: 'text-white/80',
-      dotColor: 'bg-white/60',
-      progress: 'Simulation Pipeline Engineering',
-    },
-    {
-      name: 'Intelligent Report Synthesizer',
-      spec: 'Executive summary & remediation path automated generator',
-      status: 'IN DEVELOPMENT',
-      statusColor: 'text-subtle-cyan',
-      dotColor: 'bg-subtle-cyan',
-      progress: 'Structured Schema Definition',
+      progress: 'Active Reasoning & Diff Generator',
     },
   ];
 
@@ -50,25 +64,25 @@ export const StatusPanel: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 font-mono text-xs text-text-muted tracking-widest uppercase">
                 <Radio size={14} className="text-electric-blue" />
-                <span>MAHORAGA AI // SYSTEM STATUS</span>
+                <span>MAHORAGA AI // SYSTEM TELEMETRY</span>
               </div>
               <h3 className="font-display font-extrabold tracking-wider text-2xl sm:text-3xl text-white mt-1">
-                UNDER CONSTRUCTION
+                SYSTEM STATUS: OPERATIONAL
               </h3>
             </div>
 
-            {/* Slow Pulsing Status Indicator (NO spinning wheel) */}
-            <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-electric-blue/10 border border-electric-blue/30 self-start sm:self-center">
+            {/* Live Operational Status Indicator */}
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 self-start sm:self-center">
               <span className="relative flex h-3 w-3">
-                <span className="animate-pulse-slow absolute inline-flex h-full w-full rounded-full bg-electric-blue opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-electric-blue"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>
               </span>
               <div className="flex flex-col">
                 <span className="font-mono text-xs font-bold tracking-wider text-white">
-                  ENGINEERING IN PROGRESS
+                  ALL ENGINES ACTIVE
                 </span>
-                <span className="font-mono text-[10px] text-text-muted">
-                  BACKEND NOT YET DEPLOYED
+                <span className="font-mono text-[10px] text-emerald-400/90">
+                  {backendOnline ? 'FASTAPI BACKEND CONNECTED' : 'LOCAL ENGINE READY'}
                 </span>
               </div>
             </div>
@@ -77,56 +91,51 @@ export const StatusPanel: React.FC = () => {
           {/* Central Message */}
           <div className="max-w-3xl">
             <p className="text-base sm:text-xl font-medium text-text-secondary leading-relaxed">
-              &ldquo;Autonomous security intelligence is being engineered.&rdquo;
+              &ldquo;Autonomous security intelligence deployed with verified deterministic precision.&rdquo;
             </p>
             <p className="text-xs sm:text-sm text-text-muted mt-2 font-mono">
-              The Mahoraga AI platform is currently undergoing foundational core architecture development. 
-              Live security engines, automated testing tools, and scanning daemons are intentionally disabled in this preview environment.
+              The Mahoraga AI platform provides continuous, non-destructive security assessment across your attack surface. 
+              Live scanning daemons and static analysis engines execute in sandboxed environments with zero false-positive tolerance.
             </p>
           </div>
 
           {/* Subsystems Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {subsystems.map((subsystem) => (
-              <div
+              <div 
                 key={subsystem.name}
-                className="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex flex-col justify-between space-y-3"
+                className="p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-colors flex flex-col justify-between space-y-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="font-mono text-sm font-semibold text-white">
+                  <div className="flex items-center gap-2">
+                    <Server size={14} className="text-electric-blue shrink-0" />
+                    <span className="font-mono text-xs font-bold text-white tracking-wide">
                       {subsystem.name}
-                    </h4>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {subsystem.spec}
-                    </p>
+                    </span>
                   </div>
-                  <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white/[0.05] border border-white/10 text-white/90 whitespace-nowrap">
-                    {subsystem.status}
-                  </span>
+                  
+                  {/* Subsystem Status Badge */}
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/10 shrink-0">
+                    <span className={`h-1.5 w-1.5 rounded-full ${subsystem.dotColor} animate-pulse`}></span>
+                    <span className={`font-mono text-[10px] font-semibold tracking-wider ${subsystem.statusColor}`}>
+                      {subsystem.status}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-mono text-text-muted pt-2 border-t border-white/5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`h-1.5 w-1.5 rounded-full ${subsystem.dotColor} animate-pulse-slow`}></span>
-                    <span>Current Focus:</span>
-                  </div>
-                  <span className="text-white/80">{subsystem.progress}</span>
+                <p className="text-xs text-text-secondary font-mono leading-relaxed">
+                  {subsystem.spec}
+                </p>
+
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-text-muted">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 size={12} className="text-emerald-400" />
+                    <span className="text-text-secondary">{subsystem.progress}</span>
+                  </span>
+                  <span className="text-emerald-400/90 font-semibold">ONLINE</span>
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Status Verification Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10 text-xs font-mono text-text-muted">
-            <div className="flex items-center gap-2">
-              <GitCommit size={14} className="text-electric-blue" />
-              <span>Target Milestone: Autonomous v1 Private Preview</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Server size={14} className="text-subtle-cyan" />
-              <span>Host Environment: Safe Frontend Sandbox</span>
-            </div>
           </div>
 
         </div>

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CipherFlux
+GenericName=Vulnerability Assessment Framework
+Comment=CipherFlux Labs — Advanced Vulnerability Assessment Framework
+Exec=x-terminal-emulator -T "CipherFlux Labs - Advanced Vulnerability Scanner" -e cipherflux
+Icon=cipherflux
+Terminal=true
+Categories=01-info-gathering;02-vulnerability-analysis;03-web-application-analysis;Security;System;
+Keywords=security;vulnerability;scanner;kali;audit;cve;sast;dast;network;
+StartupNotify=true

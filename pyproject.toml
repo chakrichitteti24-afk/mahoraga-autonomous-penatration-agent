@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cipherflux"
+version = "1.0.0"
+description = "CipherFlux Labs — Advanced Vulnerability Assessment Framework for Kali Linux"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "CipherFlux Labs", email = "security@cipherflux.internal" }
+]
+keywords = [
+    "kali-linux",
+    "vulnerability-scanner",
+    "security-assessment",
+    "penetration-testing",
+    "dast",
+    "sast",
+    "sca",
+    "cybersecurity",
+    "infosec",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "rich>=13.0.0",
+    "pydantic>=2.6.0",
+    "httpx>=0.27.0",
+    "dnspython>=2.6.0",
+    "cryptography>=42.0.0",
+    "reportlab>=4.1.0",
+    "pyyaml>=6.0.0",
+    "pillow>=10.0.0",
+    "packaging>=23.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+cipherflux = "cipherflux.cli.main:entry_point"
+
+[project.urls]
+Homepage = "https://github.com/cipherflux-labs/cipherflux"
+Documentation = "https://github.com/cipherflux-labs/cipherflux/tree/main/docs"
+Repository = "https://github.com/cipherflux-labs/cipherflux"
+Changelog = "https://github.com/cipherflux-labs/cipherflux/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cipherflux*", "backend*"]
