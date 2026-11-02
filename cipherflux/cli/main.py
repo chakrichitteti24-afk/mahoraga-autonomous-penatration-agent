@@ -132,6 +132,22 @@ def build_parser() -> argparse.ArgumentParser:
     sub_rules = subparsers.add_parser("rules", help="List and inspect detection rules")
     sub_rules.add_argument("--search", help="Search rules by keyword")
 
+    # browser  [NEW Feature 3 — Playwright]
+    sub_browser = subparsers.add_parser("browser", help="Playwright browser engine: DOM XSS, localStorage secrets, CSP bypass, mixed content")
+    sub_browser.add_argument("target", help="Target web URL (e.g. https://target.lab)")
+    sub_browser.add_argument("--check", help="Playwright install check only", action="store_true", default=False)
+
+    # cve-live  [NEW Feature 1 — OSV.dev live feed]
+    sub_cvelive = subparsers.add_parser("cve-live", help="Query OSV.dev live CVE feed and NVD NIST for a package")
+    sub_cvelive.add_argument("--package", "-p", required=True, help="Package name")
+    sub_cvelive.add_argument("--version-str", "-V", required=True, help="Package version string")
+    sub_cvelive.add_argument("--ecosystem", "-e", default="PyPI",
+        choices=["PyPI", "npm", "Maven", "Go", "crates.io", "Packagist", "NuGet", "RubyGems"],
+        help="Package ecosystem (default: PyPI)")
+    sub_cvelive.add_argument("--nvd-search", help="Also search NVD NIST by keyword")
+    sub_cvelive.add_argument("--cache-stats", action="store_true", help="Show local CVE cache statistics")
+    sub_cvelive.add_argument("--clear-cache", action="store_true", help="Clear all cached CVE results")
+
     return parser
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -476,6 +492,129 @@ def main(args: Optional[List[str]] = None) -> int:
             for r in rules:
                 table.add_row(r.rule_id, r.rule_name, r.cwe_id, r.default_severity.value, r.cvss_base, r.detection_logic)
             console.print(table)
+        return 0
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Feature 3: Playwright Browser Engine
+    # ──────────────────────────────────────────────────────────────────────────
+    elif cmd == "browser":
+        try:
+            from backend.scanners.browser_engine import browser_engine as be
+        except ImportError:
+            console.print("[bold red][!] browser_engine module not found.[/bold red]")
+            return 1
+
+        available, reason = be.is_available()
+
+        if parsed_args.check:
+            if available:
+                console.print("[bold green][✓] Playwright is installed and available.[/bold green]")
+            else:
+                console.print(f"[bold red][✗] Playwright not available: {reason}[/bold red]")
+                console.print("[bold yellow][→] Install: pip install playwright && playwright install chromium[/bold yellow]")
+            return 0 if available else 1
+
+        if not available:
+            console.print(f"[bold red][!] Playwright not installed.[/bold red]")
+            console.print("[bold yellow][→] Run: pip install playwright && playwright install chromium[/bold yellow]")
+            return 1
+
+        console.print(f"[bold cyan][⚙] Starting browser security scan: {parsed_args.target}[/bold cyan]")
+        findings = asyncio.run(be.scan(parsed_args.target))
+
+        if parsed_args.json:
+            print(json.dumps([f.model_dump() for f in findings], indent=2))
+        else:
+            cli = InteractiveCLI(console=console)
+            cli._render_findings_table(f"Browser Security Audit: {parsed_args.target}", findings)
+        return 0
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # Feature 1: OSV.dev Live CVE Feed + NVD NIST
+    # ──────────────────────────────────────────────────────────────────────────
+    elif cmd == "cve-live":
+        try:
+            from backend.scanners.osv_feed import live_cve_feed as feed
+        except ImportError:
+            console.print("[bold red][!] osv_feed module not found.[/bold red]")
+            return 1
+
+        # Cache management flags
+        if parsed_args.cache_stats:
+            stats = feed.cache_stats()
+            if parsed_args.json:
+                print(json.dumps(stats, indent=2))
+            else:
+                table = Table(title="CVE Cache Statistics", box=box.ROUNDED)
+                for k, v in stats.items():
+                    table.add_column(k.replace("_", " ").title(), style="cyan")
+                table.add_row(*[str(v) for v in stats.values()])
+                console.print(table)
+            return 0
+
+        if parsed_args.clear_cache:
+            deleted = feed.clear_cache()
+            console.print(f"[bold green][✓] CVE cache cleared: {deleted} entries deleted.[/bold green]")
+            return 0
+
+        console.print(
+            f"[bold cyan][⚙] Querying OSV.dev live feed: "
+            f"{parsed_args.ecosystem}/{parsed_args.package}@{parsed_args.version_str}[/bold cyan]"
+        )
+
+        findings = asyncio.run(
+            feed.query_live(
+                ecosystem=parsed_args.ecosystem,
+                package=parsed_args.package,
+                version=parsed_args.version_str,
+                source_path="cli-query",
+            )
+        )
+
+        # Also query NVD if requested
+        nvd_results = []
+        if parsed_args.nvd_search:
+            console.print(f"[bold cyan][⚙] Searching NVD NIST: '{parsed_args.nvd_search}'...[/bold cyan]")
+            nvd_results = asyncio.run(feed.search_nvd_keyword(parsed_args.nvd_search, max_results=10))
+
+        if parsed_args.json:
+            output = {
+                "osv_findings": [f.model_dump() for f in findings],
+                "nvd_results": nvd_results,
+            }
+            print(json.dumps(output, indent=2, default=str))
+        else:
+            cli = InteractiveCLI(console=console)
+            if findings:
+                cli._render_findings_table(
+                    f"OSV.dev Live CVE: {parsed_args.package}@{parsed_args.version_str}",
+                    findings,
+                )
+            else:
+                console.print(
+                    f"[bold green][✓] No known vulnerabilities found in OSV.dev for "
+                    f"{parsed_args.package}@{parsed_args.version_str} ({parsed_args.ecosystem})[/bold green]"
+                )
+
+            if nvd_results:
+                table = Table(
+                    title=f"NVD NIST Results for '{parsed_args.nvd_search}'",
+                    box=box.ROUNDED, expand=True
+                )
+                table.add_column("CVE ID", style="bold cyan", width=18)
+                table.add_column("Published", width=12)
+                table.add_column("CVSS v3", width=8)
+                table.add_column("Description", style="dim white")
+                for cve_item in nvd_results[:10]:
+                    cve_id = cve_item.get("id", "N/A")
+                    published = cve_item.get("published", "")[:10]
+                    metrics = cve_item.get("metrics", {})
+                    cvss_v31 = metrics.get("cvssMetricV31", [{}])[0].get("cvssData", {}).get("baseScore", "") if metrics.get("cvssMetricV31") else ""
+                    descriptions = cve_item.get("descriptions", [{}])
+                    desc = next((d["value"] for d in descriptions if d.get("lang") == "en"), "N/A")
+                    table.add_row(cve_id, published, str(cvss_v31), desc[:100] + "..." if len(desc) > 100 else desc)
+                console.print(table)
+
         return 0
 
     return 0

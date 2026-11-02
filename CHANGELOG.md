@@ -2,6 +2,28 @@
 
 All notable changes to the CipherFlux vulnerability assessment framework are documented in this file.
 
+## [1.1.0] - 2026-11-02
+
+### Added
+- **Live CVE Feed Integration (OSV.dev & NVD NIST)**:
+  - Integration with OSV.dev (Google Open Source Vulnerability Database) covering PyPI, npm, crates.io, Go, Maven, Packagist, and NuGet.
+  - Integration with the NVD NIST CVE API v2.0 for authoritative CVSS base scores and CWE classifications.
+  - High-performance local caching with 24-hour TTL in `~/.cipherflux/cve_cache` to ensure fast offline execution and rate-limit compliance.
+  - Multi-ecosystem SCA engine upgrade: automatically queries live OSV advisories while deduplicating against the bundled static catalog.
+  - New CLI subcommand: `cipherflux cve-live --package <name> --version-str <version> [--ecosystem <eco>] [--nvd-search <kw>] [--cache-stats] [--clear-cache]`.
+- **Playwright Headless Browser Security Engine**:
+  - Full client-side JavaScript execution and DOM vulnerability analysis powered by headless Chromium.
+  - Detection of DOM XSS sinks: `document.write`, `.innerHTML`, `eval()`, `location.hash`, `setTimeout`, and insecure DOM assignments.
+  - Detection of sensitive credentials in browser storage: JWT access tokens, API keys, passwords, and bearer tokens in `localStorage` or `sessionStorage`.
+  - Content-Security-Policy (CSP) bypass analysis: checks for `'unsafe-inline'`, `'unsafe-eval'`, wildcard origins, or missing CSP headers.
+  - Mixed Active Content detection: flags HTTP scripts, stylesheets, and resources embedded within HTTPS contexts.
+  - Client-side secret exposure: scans inline scripts for hardcoded AWS keys, OpenAI keys, GitHub PATs, Google API keys, and private keys.
+  - Prototype pollution detection using safe non-destructive prototype probing canaries.
+  - Production source map exposure (`.map` files) and JavaScript console error leakage checks.
+  - New CLI subcommand: `cipherflux browser <target-url> [--check]`.
+- **Test Suite Expansion**:
+  - Added 31 comprehensive unit tests covering OSV feed parsing, cache invalidation, version range matching, SCA live queries, and browser engine DOM/CSP/Storage analyzers (bringing the total suite to 91 passing tests).
+
 ## [1.0.0] - 2026-11-01
 
 ### Added

@@ -194,3 +194,34 @@ Inspect evidence detection rules:
 cipherflux rules
 cipherflux rules --search "injection"
 ```
+
+### 18. `cipherflux cve-live`
+Query live CVE feeds via OSV.dev and NVD NIST with local 24-hour cache:
+```bash
+# Query OSV live advisories for a package & version
+cipherflux cve-live --package requests --version-str 2.25.0 --ecosystem PyPI
+cipherflux cve-live --package axios --version-str 0.21.0 --ecosystem npm
+
+# Query OSV and search NVD NIST simultaneously
+cipherflux cve-live --package log4j-core --version-str 2.14.0 --ecosystem Maven --nvd-search "log4j"
+
+# View local CVE cache stats
+cipherflux cve-live --cache-stats --package dummy --version-str 1.0
+
+# Clear local CVE cache
+cipherflux cve-live --clear-cache --package dummy --version-str 1.0
+```
+
+### 19. `cipherflux browser`
+Passive headless Chromium security audit powered by Playwright:
+```bash
+# Check if Playwright is installed
+cipherflux browser https://target.lab --check
+
+# Run full client-side browser security audit
+# (DOM XSS sinks, localStorage JWT tokens, weak/missing CSP, mixed content, prototype pollution)
+cipherflux browser https://target.lab
+
+# Output browser audit results in JSON format
+cipherflux --json browser https://target.lab
+```

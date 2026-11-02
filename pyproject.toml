@@ -69,3 +69,6 @@ Changelog = "https://github.com/cipherflux-labs/cipherflux/blob/main/CHANGELOG.m
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["cipherflux*", "backend*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

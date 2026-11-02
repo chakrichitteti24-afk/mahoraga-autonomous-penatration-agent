@@ -41,6 +41,21 @@ from ..storage.target_store import target_store
 from ..storage.history_store import history_store
 from ..storage.config_store import config_store
 
+# Feature 1 & 3: Live CVE Feed + Browser Engine (lazy-loaded, fail-safe)
+try:
+    from backend.scanners.browser_engine import browser_engine
+    _BROWSER_ENGINE_AVAILABLE = True
+except ImportError:
+    browser_engine = None  # type: ignore
+    _BROWSER_ENGINE_AVAILABLE = False
+
+try:
+    from backend.scanners.osv_feed import live_cve_feed
+    _OSV_FEED_AVAILABLE = True
+except ImportError:
+    live_cve_feed = None  # type: ignore
+    _OSV_FEED_AVAILABLE = False
+
 class ScanProfile(str, Enum):
     PASSIVE = "passive"      # Low-impact inspection, headers, TLS, DNS, exposures
     QUICK = "quick"          # Fast availability, headers, TLS, basic tech ID, exposures
@@ -61,6 +76,10 @@ class ScanOrchestrator:
         self.tls_engine = TLSScanner(timeout=5.0)
         self.cloud_engine = cloud_scanner
         self.container_engine = container_scanner
+        # Feature 3: Playwright browser engine (None when not installed)
+        self.browser_engine = browser_engine if _BROWSER_ENGINE_AVAILABLE else None
+        # Feature 1: Live OSV.dev CVE feed singleton
+        self.live_cve_feed = live_cve_feed if _OSV_FEED_AVAILABLE else None
 
     async def execute_quick_scan(
         self,

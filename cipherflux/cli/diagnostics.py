@@ -81,6 +81,7 @@ class SystemDiagnostics:
             ("SCA Dependency Engine", "backend.scanners.sca_scanner", "SCAScanner"),
             ("Container & IaC Engine", "cipherflux.scanners.container_scanner", "ContainerSecurityScanner"),
             ("Cloud Security Engine", "cipherflux.scanners.cloud_scanner", "CloudSecurityScanner"),
+            ("Live CVE Feed (OSV/NVD)", "backend.scanners.osv_feed", "LiveCVEFeedEngine"),
         ]
         for name, mod_path, cls_name in engines:
             try:
@@ -91,6 +92,17 @@ class SystemDiagnostics:
                 results.append(DiagnosticResult("Scanner Engines", name, "PASS", "Initialized and operational"))
             except Exception as e:
                 results.append(DiagnosticResult("Scanner Engines", name, "FAIL", f"Initialization error: {str(e)}"))
+
+        # 4b. Playwright Browser Security Engine
+        try:
+            from backend.scanners.browser_engine import browser_engine
+            avail, reason = browser_engine.is_available()
+            if avail:
+                results.append(DiagnosticResult("Browser Engine", "Playwright Chromium", "PASS", "Headless browser operational for DOM/CSP analysis"))
+            else:
+                results.append(DiagnosticResult("Browser Engine", "Playwright Chromium", "WARNING", "Optional: pip install playwright && playwright install chromium"))
+        except Exception as e:
+            results.append(DiagnosticResult("Browser Engine", "Playwright Chromium", "WARNING", f"Browser engine unavailable: {e}"))
 
         # 5. Core Verification & False-Positive Registry
         try:

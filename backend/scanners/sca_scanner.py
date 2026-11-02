@@ -1,4 +1,6 @@
+import asyncio
 import json
+import logging
 import re
 import uuid
 from typing import List, Dict, Any, Optional
@@ -9,15 +11,63 @@ from ..models.schemas import SecurityFinding, SeverityLevel, VerificationStatus
 from ..config import settings
 from .cve_engine import cve_engine
 
+logger = logging.getLogger("cipherflux.sca")
+
+
+def _dedup_findings(findings: List[SecurityFinding]) -> List[SecurityFinding]:
+    """Remove duplicate findings by (targetScope, cveId) pair."""
+    seen: set = set()
+    deduped = []
+    for f in findings:
+        key = (f.targetScope, f.cveId or f.title)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(f)
+    return deduped
+
+
 class SCAScanner:
     """
     Multi-Ecosystem Software Composition Analysis (SCA) Engine.
     Parses manifest files for Python, Node.js/JavaScript, Rust, Go, Java Maven, and PHP.
-    Evaluates dependencies against verified CVE intelligence and detects dependency confusion risks.
+
+    Dual-source CVE matching:
+      1. Local static catalog (offline, instant, hardcoded verified advisories).
+      2. OSV.dev live feed (network, cached 24h, covers 10,000+ advisories per ecosystem).
+    Results are deduplicated across both sources.
     """
 
-    def __init__(self):
+    def __init__(self, use_live_feed: bool = True):
         self.cve_engine = cve_engine
+        self.use_live_feed = use_live_feed
+        # Lazy-import to avoid circular dependency at module load time
+        self._live_feed = None
+
+    def _get_live_feed(self):
+        if self._live_feed is None:
+            try:
+                from .osv_feed import live_cve_feed
+                self._live_feed = live_cve_feed
+            except ImportError:
+                self._live_feed = None
+        return self._live_feed
+
+    def _live_query(self, ecosystem: str, package: str, version: str, source_path: str) -> List[SecurityFinding]:
+        """Synchronously run the async OSV live query using a new event loop."""
+        feed = self._get_live_feed()
+        if not feed or not self.use_live_feed:
+            return []
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(
+                feed.query_live(ecosystem, package, version, source_path)
+            )
+            loop.close()
+            return result
+        except Exception as e:
+            logger.debug("OSV live query failed for %s/%s@%s: %s", ecosystem, package, version, e)
+            return []
 
     def scan_npm_manifest(self, content: str, source_path: str = "package.json") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
@@ -33,22 +83,25 @@ class SCAScanner:
             all_deps.update(data["devDependencies"])
 
         for pkg, version_spec in all_deps.items():
-            # Match against CVE catalog
+            ver = str(version_spec).strip("^~><=\" ")
+
+            # [1] Static catalog
             pkg_findings = self.cve_engine.match_dependency(
-                ecosystem="npm",
-                package_name=pkg,
-                version_str=str(version_spec),
-                source_path=source_path,
+                ecosystem="npm", package_name=pkg, version_str=ver, source_path=source_path,
             )
             findings.extend(pkg_findings)
 
-            # Check dependency confusion
+            # [2] OSV.dev live feed
+            live_findings = self._live_query("npm", pkg, ver, source_path)
+            findings.extend(live_findings)
+
+            # Dependency confusion
             confusion_finding = self.cve_engine.check_dependency_confusion_risk(pkg, "npm")
             if confusion_finding:
                 confusion_finding.targetScope = f"{source_path}:{pkg}"
                 findings.append(confusion_finding)
 
-        return findings
+        return _dedup_findings(findings)
 
     def scan_pip_manifest(self, content: str, source_path: str = "requirements.txt") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
@@ -64,20 +117,23 @@ class SCAScanner:
                 continue
 
             pkg_name, version = match.group(1).lower(), match.group(2)
+
+            # [1] Static catalog
             pkg_findings = self.cve_engine.match_dependency(
-                ecosystem="pip",
-                package_name=pkg_name,
-                version_str=version,
-                source_path=source_path,
+                ecosystem="pip", package_name=pkg_name, version_str=version, source_path=source_path,
             )
             findings.extend(pkg_findings)
+
+            # [2] OSV.dev live feed
+            live_findings = self._live_query("PyPI", pkg_name, version, source_path)
+            findings.extend(live_findings)
 
             confusion_finding = self.cve_engine.check_dependency_confusion_risk(pkg_name, "pip")
             if confusion_finding:
                 confusion_finding.targetScope = f"{source_path}:{pkg_name}"
                 findings.append(confusion_finding)
 
-        return findings
+        return _dedup_findings(findings)
 
     def scan_cargo_manifest(self, content: str, source_path: str = "Cargo.toml") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
@@ -94,14 +150,14 @@ class SCAScanner:
                 continue
 
             if in_deps:
-                # Format: package_name = "1.0.0" or package_name = { version = "1.0.0" }
                 match = re.match(r"""^([a-zA-Z0-9_\-]+)\s*=\s*(?:["']([0-9\.]+)["']|\{\s*version\s*=\s*["']([0-9\.]+)["'])""", stripped)
                 if match:
                     pkg = match.group(1)
                     ver = match.group(2) or match.group(3)
                     findings.extend(self.cve_engine.match_dependency("cargo", pkg, ver, source_path))
+                    findings.extend(self._live_query("crates.io", pkg, ver, source_path))
 
-        return findings
+        return _dedup_findings(findings)
 
     def scan_go_manifest(self, content: str, source_path: str = "go.mod") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
@@ -111,13 +167,13 @@ class SCAScanner:
             if match:
                 pkg, ver = match.group(1), match.group(2)
                 findings.extend(self.cve_engine.match_dependency("go", pkg, ver, source_path))
-        return findings
+                findings.extend(self._live_query("Go", pkg, ver, source_path))
+        return _dedup_findings(findings)
 
     def scan_maven_manifest(self, content: str, source_path: str = "pom.xml") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
         try:
             root = ET.fromstring(content)
-            # Find dependencies
             for dep in root.iter():
                 if dep.tag.endswith("dependency"):
                     group_id = ""
@@ -134,9 +190,10 @@ class SCAScanner:
                     if artifact_id and version and not version.startswith("${"):
                         full_name = f"{group_id}:{artifact_id}" if group_id else artifact_id
                         findings.extend(self.cve_engine.match_dependency("maven", full_name, version, source_path))
+                        findings.extend(self._live_query("Maven", full_name, version, source_path))
         except Exception:
             pass
-        return findings
+        return _dedup_findings(findings)
 
     def scan_composer_manifest(self, content: str, source_path: str = "composer.json") -> List[SecurityFinding]:
         findings: List[SecurityFinding] = []
@@ -151,9 +208,10 @@ class SCAScanner:
             for pkg, ver in all_deps.items():
                 clean_ver = str(ver).strip("^~><= ")
                 findings.extend(self.cve_engine.match_dependency("composer", pkg, clean_ver, source_path))
+                findings.extend(self._live_query("Packagist", pkg, clean_ver, source_path))
         except Exception:
             pass
-        return findings
+        return _dedup_findings(findings)
 
     def audit_workspace_manifests(self) -> List[SecurityFinding]:
         """Audit all known dependency manifests located across the workspace."""
@@ -178,4 +236,31 @@ class SCAScanner:
             except Exception:
                 pass
 
-        return findings
+        # 3. Cargo.toml
+        cargo_toml = workspace / "Cargo.toml"
+        if cargo_toml.exists():
+            try:
+                content = cargo_toml.read_text(encoding="utf-8", errors="replace")
+                findings.extend(self.scan_cargo_manifest(content, "Cargo.toml"))
+            except Exception:
+                pass
+
+        # 4. go.mod
+        go_mod = workspace / "go.mod"
+        if go_mod.exists():
+            try:
+                content = go_mod.read_text(encoding="utf-8", errors="replace")
+                findings.extend(self.scan_go_manifest(content, "go.mod"))
+            except Exception:
+                pass
+
+        # 5. pom.xml
+        pom_xml = workspace / "pom.xml"
+        if pom_xml.exists():
+            try:
+                content = pom_xml.read_text(encoding="utf-8", errors="replace")
+                findings.extend(self.scan_maven_manifest(content, "pom.xml"))
+            except Exception:
+                pass
+
+        return _dedup_findings(findings)
